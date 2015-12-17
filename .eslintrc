@@ -191,7 +191,8 @@
 
   "globals": {
     "THREE": true,
-    "Stats": true
+    "Stats": true,
+    "io": true
   }
 
 }

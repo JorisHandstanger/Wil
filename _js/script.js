@@ -6,9 +6,9 @@ import spaceObject from './modules/spaceObject';
 
 let camera, scene, renderer;
 
-let planet, laser, laserActive;
+let planet, laser;
+let laserActive = false;
 let laserCooldown = false;
-let laserStrength = 0.9;
 var rot = 0;
 
 var stats = new Stats();
@@ -37,6 +37,8 @@ const init = () => {
   // Performance monitor voor development
   stats.setMode( 0 ); // 0: fps, 1: ms, 2: mb
 
+  socket.emit('lightStatus', 'laserLedon');
+
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.rotation.set( 0, 0, 0 );
   camera.position.set(0, 490, 0);
@@ -58,11 +60,12 @@ const init = () => {
 
   scene.add( dirLight );
 
-  const onSocketNotification = event => {
+  socket.on('notification', (data) =>{
 
-    switch ( event.data ) {
+    switch ( data.trim() ) {
 
-    case 'stepright': // q
+    case 'q': // q
+
       if(rightPadPressed){
         speed += 0.001;
 
@@ -72,7 +75,7 @@ const init = () => {
 
       break;
 
-    case 'stepleft': // d
+    case 'd': // d
       if(leftPadPressed){
         speed += 0.001;
 
@@ -82,14 +85,35 @@ const init = () => {
 
       break;
 
-    case 'laser': //L
+    case 'z': //L
+
       if(!laserCooldown){
         laserActive = true;
+        socket.emit('lightStatus', 'laserLedoff');
+
+        setTimeout(function(){
+          laserActive = false;
+
+          laserCooldown = true;
+          setTimeout(function(){
+            laserCooldown = false;
+            socket.emit('lightStatus', 'laserLedon');
+          }, 5000);
+
+        }, 600);
+
       }
 
       break;
 
-    case 'left': // left
+    /*case 'x': //Launch
+      if(!laserCooldown){
+        laserActive = true;
+      }
+
+      break;*/
+
+    case 'l': // left
       if(currentPos > -1){
         currentPos -= 1;
         stopped = false;
@@ -97,7 +121,7 @@ const init = () => {
 
       break;
 
-    case 'right': // right
+    case 'r': // right
       if(currentPos < 1){
         currentPos += 1;
         stopped = false;
@@ -105,33 +129,7 @@ const init = () => {
 
       break;
     }
-
-  };
-
-  // const onKeyUp = event => {
-  //   switch( event.keyCode ) {
-
-  //   case 37: // left
-  //   case 81: // q
-  //     break;
-
-  //   case 76: //L
-
-  //     laserActive = false;
-
-  //     break;
-
-  //   case 39: // right
-  //   case 68: // d
-  //     break;
-
-  //   }
-  // };
-
-  //document.addEventListener( 'keydown', onKeyDown, false );
-  //document.addEventListener( 'keyup', onKeyUp, false );
-
-  socket.on('notification', onSocketNotification);
+  });
 
   let loader1 = new THREE.ColladaLoader();
 
@@ -161,7 +159,7 @@ const init = () => {
       let laserMaterial = new THREE.MeshLambertMaterial({
         color: 0xccffcc,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0,
         emissive: new THREE.Color( 0.3, 0.8, 0.3 )
       });
 
@@ -204,7 +202,7 @@ const animate = () => {
 
     let random = Math.floor(Math.random() * 10) + 1;
 
-    if(random <= 9){
+    if(random <= 3){
 
       if(spaceObjectsToCollect.length >= 1){
         let part = new spaceObject(
@@ -276,6 +274,23 @@ const animate = () => {
         spaceObjectsProgress.splice(spaceObjectsToCollect.indexOf(e.type), 1);
         spaceObjectsCollected.push(e.type);
 
+        switch (spaceObjectsCollected.length) {
+          case 1:
+          socket.emit('lightStatus', 'partled1on' );
+          break;
+          case 2:
+          socket.emit('lightStatus', 'partled2on' );
+          break;
+          case 3:
+          socket.emit('lightStatus', 'partled3on' );
+          break;
+          case 4:
+          socket.emit('lightStatus', 'partled4on' );
+          allparts = true;
+          //socket.emit('lightStatus', 'launchLedon');
+          break;
+        }
+
         console.log(spaceObjectsToCollect);
         console.log(spaceObjectsProgress);
         console.log(spaceObjectsCollected);
@@ -300,6 +315,8 @@ const animate = () => {
 
     stopped = false;
 
+    laser.material.opacity = 0.9;
+
     spaceObjects.forEach( (e) => {
 
       if((e.hPosition === currentPos) && (e.type === 2)){
@@ -310,22 +327,8 @@ const animate = () => {
 
     });
 
-    laser.material.opacity = laserStrength;
-    if(laserStrength > 0){
-      laserStrength -= 0.01;
-    }
-    if(laserStrength <= 0.4){
-      laserCooldown = true;
-    }
-
-  }else if(laser) {
+  }else if(laser){
     laser.material.opacity = 0;
-    if(laserStrength < 0.9){
-      laserStrength += 0.01;
-      if(laserStrength > 0.4){
-        laserCooldown = false;
-      }
-    }
   }
 
   if(camera.position.x < (16*currentPos)){
