@@ -187,6 +187,11 @@
     "no-dupe-class-members": 2,
     "prefer-template": 2,
     "no-negated-condition": 2
+  },
+
+  "globals": {
+    "THREE": true,
+    "Stats": true
   }
 
 }
