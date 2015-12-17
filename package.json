@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "author": "Joris - Ewoud",
+  "main": "server.js",
   "scripts": {
     "development": "webpack --watch & npm run serve",
     "production": "webpack -d -p",

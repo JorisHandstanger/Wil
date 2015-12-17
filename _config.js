@@ -9,7 +9,7 @@ module.exports = {
     },
     dest: {
       file: 'script.js',
-      path: './js/'
+      path: './public/js/'
     }
   },
 
@@ -20,7 +20,7 @@ module.exports = {
     },
     dest: {
       file: 'style.css',
-      path: '../css/' //relative from js dest folder
+      path: '../public/css/' //relative from js dest folder
     }
   },
 

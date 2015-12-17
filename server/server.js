@@ -20,11 +20,11 @@ var app = require('http').createServer(handler);
     if (pathname === '/')
       pathname = 'index.html';
 
-    fs.readFile( pathname, function(err, data) {
+    fs.readFile('public/' + pathname, function(err, data) {
       if (err) {
         console.log(err);
         res.writeHead(500);
-        return res.end('Error loading index.html');
+        return res.end('Error loading client.html');
       }
       res.writeHead(200);
       res.end(data);

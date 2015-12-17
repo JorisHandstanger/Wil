@@ -1,5 +1,7 @@
 'use strict';
 
+var socket = io.connect('http://localhost:8000');
+
 import spaceObject from './modules/spaceObject';
 
 let camera, scene, renderer;
@@ -56,11 +58,11 @@ const init = () => {
 
   scene.add( dirLight );
 
-  const onKeyDown = event => {
+  const onSocketNotification = event => {
 
-    switch ( event.keyCode ) {
+    switch ( event.data ) {
 
-    case 81: // q
+    case 'stepright': // q
       if(rightPadPressed){
         speed += 0.001;
 
@@ -70,7 +72,7 @@ const init = () => {
 
       break;
 
-    case 68: // d
+    case 'stepleft': // d
       if(leftPadPressed){
         speed += 0.001;
 
@@ -80,14 +82,14 @@ const init = () => {
 
       break;
 
-    case 76: //L
+    case 'laser': //L
       if(!laserCooldown){
         laserActive = true;
       }
 
       break;
 
-    case 37: // left
+    case 'left': // left
       if(currentPos > -1){
         currentPos -= 1;
         stopped = false;
@@ -95,7 +97,7 @@ const init = () => {
 
       break;
 
-    case 39: // right
+    case 'right': // right
       if(currentPos < 1){
         currentPos += 1;
         stopped = false;
@@ -106,28 +108,30 @@ const init = () => {
 
   };
 
-  const onKeyUp = event => {
-    switch( event.keyCode ) {
+  // const onKeyUp = event => {
+  //   switch( event.keyCode ) {
 
-    case 37: // left
-    case 81: // q
-      break;
+  //   case 37: // left
+  //   case 81: // q
+  //     break;
 
-    case 76: //L
+  //   case 76: //L
 
-      laserActive = false;
+  //     laserActive = false;
 
-      break;
+  //     break;
 
-    case 39: // right
-    case 68: // d
-      break;
+  //   case 39: // right
+  //   case 68: // d
+  //     break;
 
-    }
-  };
+  //   }
+  // };
 
-  document.addEventListener( 'keydown', onKeyDown, false );
-  document.addEventListener( 'keyup', onKeyUp, false );
+  //document.addEventListener( 'keydown', onKeyDown, false );
+  //document.addEventListener( 'keyup', onKeyUp, false );
+
+  socket.on('notification', onSocketNotification);
 
   let loader1 = new THREE.ColladaLoader();
 
@@ -210,7 +214,7 @@ const animate = () => {
         spaceObjects.push(part);
 
         spaceObjectsProgress.push(spaceObjectsToCollect[0]);
-        spaceObjectsToCollect.splice(0,1);
+        spaceObjectsToCollect.splice(0, 1);
 
         console.log(spaceObjectsToCollect);
         console.log(spaceObjectsProgress);
