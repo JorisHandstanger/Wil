@@ -11,6 +11,7 @@ export default class spaceObject {
     this.rotation = this.radians(45);
 
     this.loaded = false;
+    this.finished = false;
 
     this.collided = false;
     this.deletable = false;
@@ -46,7 +47,7 @@ export default class spaceObject {
         // Function when resource is loaded
         ( collada ) => {
           let theObject = collada.scene;
-          theObject.position.set((this.hPosition * 16), 0, -470);
+          theObject.position.set(0, 0, -470);
 
           theObject.rotation.set(this.radians(-90), 0, 0);
 
@@ -198,10 +199,13 @@ export default class spaceObject {
       this.deletable = true;
     }else if(this.rotation >= this.radians(87)){
       this.collided = true;
-    }else if(this.rotation >= this.radians(87.2)){
+    }else if(this.rotation >= this.radians(87.01)){
       this.collided = false;
     }
 
+    if((this.type === 1) && (this.rotation >= this.radians(80))){
+      this.finished = true;
+    }
   }
 
   render(){

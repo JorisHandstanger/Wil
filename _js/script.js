@@ -11,6 +11,12 @@ let laserActive = false;
 let laserCooldown = false;
 var rot = 0;
 
+let allparts = false;
+let stoppedspawning = false;
+let gamestarted = false;
+let gamefinished = false;
+let resettable = false;
+
 var stats = new Stats();
 
 let spaceObjects = [];
@@ -32,10 +38,22 @@ var rightPadPressed = true;
 
 let speed = 0;
 
+let video1 = document.getElementById('Video1');
+let video2 = document.getElementById('Video2');
+
+let instructions = document.getElementById('instructions');
+
 const init = () => {
 
   // Performance monitor voor development
   stats.setMode( 0 ); // 0: fps, 1: ms, 2: mb
+
+  video1.addEventListener('ended', myHandler, false);
+  function myHandler() {
+    console.log('done');
+    video1.classList.add('hidden');
+    gamestarted = true;
+  }
 
   socket.emit('lightStatus', 'laserLedon');
 
@@ -66,6 +84,11 @@ const init = () => {
 
     case 'q': // q
 
+      if(!gamestarted){
+        video1.play();
+        instructions.classList.add('hidden');
+      }
+
       if(rightPadPressed){
         speed += 0.001;
 
@@ -76,6 +99,12 @@ const init = () => {
       break;
 
     case 'd': // d
+
+      if(!gamestarted){
+        video1.play();
+        instructions.classList.add('hidden');
+      }
+
       if(leftPadPressed){
         speed += 0.001;
 
@@ -106,12 +135,25 @@ const init = () => {
 
       break;
 
-    /*case 'x': //Launch
-      if(!laserCooldown){
-        laserActive = true;
+    case 'x': //Launch
+      if(resettable){
+        console.log('reset');
+        resetGame();
+
+      }else if(gamefinished){
+        instructions.classList.add('hidden');
+        video2.classList.remove('hidden');
+        video2.play();
+
+        setTimeout(function() {
+          instructions.innerHTML = 'HOERA! WILL IS TERUG THUIS DANKZIJ JOU! </br> DRUK OP DE RODE KNOP OM NOG EENS TE SPELEN.';
+          instructions.classList.remove('hidden');
+          resettable = true;
+        }, 6000);
+        console.log('gedaan!');
       }
 
-      break;*/
+      break;
 
     case 'l': // left
       if(currentPos > -1){
@@ -192,42 +234,106 @@ const onWindowResize = () => {
   renderer.setSize( window.innerWidth, window.innerHeight );
 };
 
+const resetGame = () => {
+  video1.pause();
+  video2.pause();
+
+  video1.currentTime = 0;
+  video2.currentTime = 0;
+
+  video1.load();
+  video2.load();
+
+  video1.classList.remove('hidden');
+  video2.classList.add('hidden');
+
+  spaceObjects.forEach( (e) => {
+
+    let selectedObject = scene.getObjectByName(e.id);
+    scene.remove( selectedObject );
+    spaceObjects.splice(e, 1);
+
+  });
+
+  laserActive = false;
+  laserCooldown = false;
+  rot = 0;
+
+  allparts = false;
+  stoppedspawning = false;
+  gamestarted = false;
+  gamefinished = false;
+  resettable = false;
+
+  spaceObjects = [];
+
+  spaceObjectsToCollect = [3, 4, 5, 6];
+  spaceObjectsProgress = [];
+  spaceObjectsCollected = [];
+
+  previousSpawnTime = performance.now();
+
+  currentPos = 0;
+
+  stopped = false;
+
+  nextId = 0;
+
+  leftPadPressed = true;
+  rightPadPressed = true;
+
+  speed = 0;
+
+  instructions.innerHTML = 'GA OP DE DRUKPLAAT STAAN OM TE STARTEN!';
+  instructions.classList.remove('hidden');
+
+  socket.emit('lightStatus', 'alloff');
+};
+
 const animate = () => {
 
   requestAnimationFrame( animate );
 
   stats.begin(); // Begin van te monitoren code
 
-  if(performance.now() - previousSpawnTime >= 3000){
+  if((performance.now() - previousSpawnTime >= 3000) && !stoppedspawning && gamestarted){
 
-    let random = Math.floor(Math.random() * 10) + 1;
+    if(!allparts) {
+      let random = Math.floor(Math.random() * 10) + 1;
 
-    if(random <= 3){
+      if(random <= 3){
 
-      if(spaceObjectsToCollect.length >= 1){
-        let part = new spaceObject(
-          spaceObjectsToCollect[0],
+        if(spaceObjectsToCollect.length >= 1){
+          let part = new spaceObject(
+            spaceObjectsToCollect[0],
+            nextId
+          );
+          spaceObjects.push(part);
+
+          spaceObjectsProgress.push(spaceObjectsToCollect[0]);
+          spaceObjectsToCollect.splice(0, 1);
+
+          nextId++;
+        }
+
+      }else{
+        let stone = new spaceObject(
+          2,
           nextId
         );
-        spaceObjects.push(part);
-
-        spaceObjectsProgress.push(spaceObjectsToCollect[0]);
-        spaceObjectsToCollect.splice(0, 1);
-
-        console.log(spaceObjectsToCollect);
-        console.log(spaceObjectsProgress);
-        console.log(spaceObjectsCollected);
-
+        spaceObjects.push(stone);
         nextId++;
       }
 
     }else{
-      let stone = new spaceObject(
-        2,
-        nextId
+
+      let part = new spaceObject(
+        1,
+        100
       );
-      spaceObjects.push(stone);
-      nextId++;
+      spaceObjects.push(part);
+
+      stoppedspawning = true;
     }
 
     previousSpawnTime = performance.now();
@@ -242,7 +348,7 @@ const animate = () => {
     }
 
     //rotatie aanpassen
-    if(!stopped){
+    if(!stopped && !gamefinished){
       e.update(speed);
     }
 
@@ -255,10 +361,6 @@ const animate = () => {
       if( (e.type === 3) || (e.type === 4) || (e.type === 5) || (e.type === 6)){
         spaceObjectsProgress.splice(spaceObjectsToCollect.indexOf(e.type), 1);
         spaceObjectsToCollect.push(e.type);
-
-        console.log(spaceObjectsToCollect);
-        console.log(spaceObjectsProgress);
-        console.log(spaceObjectsCollected);
       }
     }
 
@@ -275,35 +377,39 @@ const animate = () => {
         spaceObjectsCollected.push(e.type);
 
         switch (spaceObjectsCollected.length) {
-          case 1:
+        case 1:
           socket.emit('lightStatus', 'partled1on' );
           break;
-          case 2:
+        case 2:
           socket.emit('lightStatus', 'partled2on' );
           break;
-          case 3:
+        case 3:
           socket.emit('lightStatus', 'partled3on' );
           break;
-          case 4:
+        case 4:
           socket.emit('lightStatus', 'partled4on' );
           allparts = true;
-          //socket.emit('lightStatus', 'launchLedon');
           break;
         }
-
-        console.log(spaceObjectsToCollect);
-        console.log(spaceObjectsProgress);
-        console.log(spaceObjectsCollected);
       }
+    }
+
+    if(e.finished && !gamefinished){
+      gamefinished = true;
+
+      instructions.innerHTML = 'DRUK OP DE RODE KNOP OM WILL NAAR HUIS TE STUREN!';
+      instructions.classList.remove('hidden');
+
+      socket.emit('lightStatus', 'launchLedon');
     }
 
   });
 
-  if(!stopped){
+  if(!stopped && !gamefinished){
     rot += speed;
   }
 
-  if(planet && !stopped){
+  if(planet && !stopped && !gamefinished){
     planet.rotation.set(rot, 0, 0);
   }
 

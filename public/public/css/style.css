@@ -66,58 +66,30 @@ body {
   width: 100%;
 }
 
-body {
-  background-color: #fff;
-  font-family: arial, helvetica, sans-serif;
-  margin: 0;
-  overflow: hidden;
-}
-
-#blocker {
-  background-color: rgba(0, 0, 0, 0.5);
-  position: absolute;
-  height: 100%;
+.video {
   width: 100%;
+  position: absolute;
+  z-index: 5;
 }
 
 #instructions {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: 700px;
   color: #fff;
-  text-align: center;
-  cursor: pointer;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-align-items: center;
-  -ms-flex-align: center;
-  align-items: center;
-  -webkit-justify-content: center;
-  -ms-flex-pack: center;
-  justify-content: center;
-}
-
-#instructions span {
-  font-size: 40px;
-}
-
-#instructions .inst {
-  font-size: 20px;
-}
-
-#crosshairs {
-  display: none;
   background-color: transparent;
-  border: 2px solid #fff;
-  width: 10px;
-  height: 10px;
-  left: 50%;
-  margin-left: -5px;
-  top: 50%;
-  margin-top: -5px;
+  font-family: slashbadass_black;
+  font-size: 40px;
+  text-align: center;
   position: absolute;
-  z-index: 10;
-  border-radius: 5px;
+  top: 45%;
+  left: 50%;
+  margin-left: -350px;
+  z-index: 30;
+}
+
+.hidden {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
 
 canvas {
